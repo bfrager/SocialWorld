@@ -15,13 +15,15 @@ $(function () {
       maxTweets++;
       $('#tweet-container').prepend(html);
 
-      // cap tweets loaded onto glove
       //GOOGLE GLOBE MARKERS
       // globe.addData( data[i][1], {format: 'magnitude', name: data[i][0]} )
       globe.addData([tweet.location.lat, tweet.location.lng, 0.3, 0x33ff6d], { format: 'magnitude', name: 'twitter'})
       globe.createPoints()
       globe.frameRender()
       globe.animate()
+
+      //Twitter Globe Markers
+      globe.addTweet()
     });
 
     searchForm.on('submit', function(evt){

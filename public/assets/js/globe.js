@@ -136,6 +136,10 @@ DAT.Globe = function(container, opts) {
     mesh.scale.set( 1.1, 1.1, 1.1 );
     scene.add(mesh);
 
+    //add beacons
+    beaconHolder = new THREE.Object3D();
+    mesh.add(beaconHolder);
+
     geometry = new THREE.BoxGeometry(0.75, 0.75, 1);
     geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0,0,-0.5));
 
@@ -165,7 +169,6 @@ DAT.Globe = function(container, opts) {
     }, false);
   }
 
-//ADD TWITTER LAT / LNG CALLS HERE
   function addData(data, opts) {
     var lat, lng, size, color, i, step, colorFnWrapper;
 
@@ -215,8 +218,67 @@ DAT.Globe = function(container, opts) {
     } else {
       this._baseGeometry = subgeo;
     }
-
   };
+
+  /**
+   * Converts a latlong to Vector3 for use in Three.js
+   */
+  function latLonToVector3 (lat, lon, magnitude) {
+
+    magintude = height ? height : 0;
+
+    var vector3 = new THREE.Vector3(0, 0, 0);
+
+    lon = lon + 10;
+    lat = lat - 2;
+
+    var phi = PI_HALF - lat * Math.PI / 180 - Math.PI * 0.01;
+    var theta = 2 * Math.PI - lon * Math.PI / 180 + Math.PI * 0.06;
+    var rad = 600 + height;
+
+    vector3.x = Math.sin(phi) * Math.cos(theta) * rad;
+    vector3.y = Math.cos(phi) * rad;
+    vector3.z = Math.sin(phi) * Math.sin(theta) * rad;
+
+    return vector3;
+  };
+
+
+//CALL THE FOLLOWING FUNCTION IN THE TWEET SOCKET!
+  /**
+   *	Adds a Tweet to the Earth
+   */
+  function addTweet (tweet) {
+
+    // extract a latlong from the Tweet object
+    var latlong = {
+      lat: tweet.coordinates.coordinates[1],
+      lon: tweet.coordinates.coordinates[0]
+    };
+
+    var position = latLonToVector3(latlong.lat, latlong.lon);
+
+    addBeacon(position, tweet);
+  }
+
+  /**
+   *	Adds a beacon (line) to the surface of the Earth
+   */
+  function addBeacon (position, tweet) {
+
+    var beacon = new TweetBeacon(tweet);
+
+    beacon.position.x = position.x;
+    beacon.position.y = position.y;
+    beacon.position.z = position.z;
+    beacon.lookAt(mesh.position);
+    beaconHolder.add(beacon);
+
+    // // remove beacon from scene when it expires itself
+    // beacon.onHide(function () {
+    //   beaconHolder.remove(beacon);
+    // });
+  }
 
   function createPoints() {
     if (this._baseGeometry !== undefined) {
